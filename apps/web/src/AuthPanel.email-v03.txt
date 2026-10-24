@@ -1,0 +1,41 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { api } from './api'
+import type { AuthState } from './api'
+
+export function AuthPanel({ state, onSuccess, binding = false }: { state: AuthState | null; onSuccess: (state: AuthState) => void; binding?: boolean }) {
+  const [mode, setMode] = useState(binding ? 'bind' : 'login')
+  const [email, setEmail] = useState(''), [username, setUsername] = useState('')
+  const [password, setPassword] = useState(''), [code, setCode] = useState('')
+  const [message, setMessage] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false)
+  const needsCode = ['register', 'reset', 'bind'].includes(mode)
+  const title = ({ login: '登录持仓观测站', register: '创建邮箱账户', reset: '找回密码', bind: '为原账户绑定邮箱', legacy: '原本地账户入口' } as Record<string, string>)[mode]
+  async function perform(action: () => Promise<void>) {
+    setError(''); setMessage(''); setBusy(true)
+    try { await action() } catch (e) { setError(e instanceof Error ? e.message : '操作未完成') } finally { setBusy(false) }
+  }
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    await perform(async () => {
+      if (mode === 'legacy') await api(`/auth/${state?.configured ? 'login' : 'setup'}`, { password })
+      else await api(`/auth/${mode}`, { email, username, password, code })
+      setPassword(''); setCode('')
+      if (mode === 'reset') { setMode('login'); setMessage('密码已重置，旧会话已退出。请用新密码登录。') }
+      else onSuccess(await api<AuthState>('/auth'))
+    })
+  }
+  const form = <form className={binding ? 'binding-form' : 'auth-form'} onSubmit={submit}>
+    <span className="eyebrow">YOUR PRIVATE PORTFOLIO</span><h2>{title}</h2>
+    <p>{binding ? '绑定后继续保留原有持仓，后续可通过邮箱验证码找回密码。' : mode === 'register' ? '新账户从空持仓开始。已有本地数据请先通过原账户入口登录，再绑定邮箱。' : '一个账户管理支付宝、moomoo 和 OKX 的持仓。'}</p>
+    {!state?.email_configured && <div className="info-note">SMTP 尚未配置，邮箱验证暂不可用。原本地账户仍可登录。</div>}
+    {mode !== 'legacy' && <label>邮箱<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} /></label>}
+    {['register', 'bind'].includes(mode) && <label>用户名<input autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} required minLength={2} maxLength={40} /></label>}
+    <label>{needsCode ? '设置新密码（至少 12 位）' : '密码'}<input type="password" autoComplete={needsCode ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={needsCode ? 12 : 8} maxLength={200} /></label>
+    {needsCode && <label>邮箱验证码<div className="code-entry"><input aria-label="邮箱验证码" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={e => setCode(e.target.value)} required pattern="[0-9]{6}" maxLength={6} /><button type="button" className="secondary" disabled={busy || !state?.email_configured || !email} onClick={() => perform(async () => { const result = await api<{ message: string }>('/auth/code', { email, purpose: mode }); setMessage(result.message) })}>发送验证码</button></div></label>}
+    {error && <p role="alert" className="error">{error}</p>}{message && <p role="status" className="info-note">{message}</p>}
+    <button className="primary" disabled={busy || !state || (needsCode && !state.email_configured)}>{busy ? '处理中…' : mode === 'reset' ? '重置密码' : mode === 'bind' ? '验证邮箱并绑定' : mode === 'register' ? '注册并进入' : '进入工作台'}</button>
+    {!binding && <div className="auth-links">{[['login', '邮箱登录'], ['register', '注册'], ['reset', '忘记密码'], ...(state?.legacy_available ? [['legacy', '原本地账户入口']] : [])].filter(([key]) => key !== mode).map(([key, label]) => <button type="button" key={key} onClick={() => { setMode(key); setPassword(''); setCode(''); setMessage(''); setError('') }}>{label}</button>)}</div>}
+    {!binding && <small>v0.3 · 账户数据独立 · 持仓变动由你手动导入</small>}
+  </form>
+  return binding ? <section className="card">{form}</section> : <div className="auth-page"><div className="auth-intro"><span className="logo-mark">P<span>.</span></span><span className="eyebrow">PERSONAL PORTFOLIO / 03</span><h1>让每一笔持仓，<br />都有据可循。</h1><p>把分散的资产、交易与收益原因，<br />放回同一个清晰的视野。</p><div className="auth-platforms">支付宝 <span>·</span> moomoo <span>·</span> OKX</div></div>{form}</div>
+}
