@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "平台：初始化数据库", "type": "shell", "command": "./scripts/setup.ps1", "problemMatcher": [], "options": { "cwd": "${workspaceFolder}" } },
+    { "label": "平台：后端 API", "type": "process", "command": "${workspaceFolder}/services/api/.venv/Scripts/python.exe", "args": ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload", "--reload-dir", "services/api"], "options": { "cwd": "${workspaceFolder}", "env": { "PYTHONPATH": "${workspaceFolder}/services/api" } }, "isBackground": true, "problemMatcher": { "owner": "api", "pattern": { "regexp": "^(.*):(\\d+):(.*)$", "file": 1, "location": 2, "message": 3 }, "background": { "activeOnStart": true, "beginsPattern": "Started", "endsPattern": "Application startup complete" } }, "presentation": { "group": "platform", "reveal": "always" } },
+    { "label": "平台：导入 Worker", "type": "process", "command": "${workspaceFolder}/services/api/.venv/Scripts/python.exe", "args": ["-u", "-m", "app.worker"], "options": { "cwd": "${workspaceFolder}", "env": { "PYTHONPATH": "${workspaceFolder}/services/api" } }, "isBackground": true, "problemMatcher": { "owner": "worker", "pattern": { "regexp": "^(.*):(\\d+):(.*)$", "file": 1, "location": 2, "message": 3 }, "background": { "activeOnStart": true, "beginsPattern": "Import", "endsPattern": "Import worker ready" } }, "presentation": { "group": "platform", "reveal": "always" } },
+    { "label": "平台：前端 Web", "type": "shell", "command": "npm.cmd run dev", "options": { "cwd": "${workspaceFolder}/apps/web" }, "isBackground": true, "problemMatcher": { "owner": "vite", "pattern": { "regexp": "^(.*):(\\d+):(.*)$", "file": 1, "location": 2, "message": 3 }, "background": { "activeOnStart": true, "beginsPattern": "VITE", "endsPattern": "Local:" } }, "presentation": { "group": "platform", "reveal": "always" } },
+    { "label": "平台：启动全部", "dependsOn": ["平台：初始化数据库", "平台：服务组"], "dependsOrder": "sequence", "problemMatcher": [] },
+    { "label": "平台：服务组", "dependsOn": ["平台：后端 API", "平台：导入 Worker", "平台：前端 Web"], "dependsOrder": "parallel", "problemMatcher": [] },
+    { "label": "平台：财务与接口测试", "type": "process", "command": "${workspaceFolder}/services/api/.venv/Scripts/python.exe", "args": ["-m", "pytest", "tests", "-q", "--tb=short"], "options": { "cwd": "${workspaceFolder}", "env": { "PYTHONPATH": "${workspaceFolder}/services/api" } }, "problemMatcher": [] },
+    { "label": "平台：前端构建", "type": "shell", "command": "npm.cmd run build", "options": { "cwd": "${workspaceFolder}/apps/web" }, "group": "build", "problemMatcher": [] }
+  ]
+}

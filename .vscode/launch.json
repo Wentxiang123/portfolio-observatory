@@ -1,0 +1,8 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    { "name": "FastAPI：断点调试", "type": "debugpy", "request": "launch", "module": "uvicorn", "args": ["app.main:app", "--host", "127.0.0.1", "--port", "8000"], "cwd": "${workspaceFolder}", "python": "${workspaceFolder}/services/api/.venv/Scripts/python.exe", "envFile": "${workspaceFolder}/.env", "env": { "PYTHONPATH": "${workspaceFolder}/services/api" }, "justMyCode": true },
+    { "name": "Worker：断点调试", "type": "debugpy", "request": "launch", "module": "app.worker", "cwd": "${workspaceFolder}", "python": "${workspaceFolder}/services/api/.venv/Scripts/python.exe", "envFile": "${workspaceFolder}/.env", "env": { "PYTHONPATH": "${workspaceFolder}/services/api" }, "justMyCode": true },
+    { "name": "Web：Edge 调试", "type": "msedge", "request": "launch", "url": "http://127.0.0.1:5173", "webRoot": "${workspaceFolder}/apps/web" }
+  ]
+}

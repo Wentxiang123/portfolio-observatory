@@ -1,0 +1,11 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/services/api/.venv/Scripts/python.exe",
+    "python.analysis.extraPaths": ["services/api"],
+    "files.exclude": { "**/__pycache__": true, "var/private/postgres": true },
+    "search.exclude": { "**/.venv": true, "**/node_modules": true, "var/private": true },
+    "terminal.integrated.defaultProfile.windows": "PowerShell"
+  },
+  "extensions": { "recommendations": ["ms-python.python", "ms-python.debugpy", "oxc.oxc-vscode"] }
+}
